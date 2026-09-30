@@ -2,72 +2,92 @@
 
 interface SOCGaugeProps {
   soc: number; // 0-1
-  confidence: number; // 0-1
 }
 
 function socColor(soc: number): string {
-  if (soc < 0.2) return "#f0546a"; // danger
-  if (soc < 0.45) return "#f5b942"; // warning
-  return "#3ddc97"; // accent
+  if (soc < 0.2) return "#fb7185"; // danger
+  if (soc < 0.45) return "#fbbf24"; // warning
+  return "#a3e635"; // volt
 }
 
-export default function SOCGauge({ soc, confidence }: SOCGaugeProps) {
-  const pct = Math.max(0, Math.min(1, soc));
-  const radius = 90;
-  const stroke = 14;
-  const normalizedRadius = radius - stroke / 2;
-  const circumference = normalizedRadius * 2 * Math.PI;
-  // 270-degree arc (like an instrument gauge), starting at -225deg
-  const arcFraction = 0.75;
-  const arcLength = circumference * arcFraction;
-  const dashOffset = arcLength - pct * arcLength;
+const clamp = (v: number) => Math.max(0, Math.min(1, v));
+
+export default function SOCGauge({ soc }: SOCGaugeProps) {
+  const pct = clamp(soc);
   const color = socColor(pct);
 
+  const R = 76; // outer radius of track
+  const STROKE = 12;
+  const nr = R - STROKE / 2;
+  const C = 2 * Math.PI * nr;
+  const ARC = 0.75;
+  const arcLen = C * ARC;
+  const dashOffset = arcLen - pct * arcLen;
+
+  const PAD = 18;
+  const S = (R + PAD) * 2;
+  const c = S / 2;
+
+  const N_TICKS = 28;
+  const polar = (r: number, deg: number): [number, number] => {
+    const rad = (deg * Math.PI) / 180;
+    return [c + r * Math.cos(rad), c + r * Math.sin(rad)];
+  };
+  const activeAngle = 135 + pct * 270;
+
   return (
-    <div className="flex flex-col items-center justify-center">
-      <div className="relative" style={{ width: radius * 2, height: radius * 2 }}>
-        <svg
-          height={radius * 2}
-          width={radius * 2}
-          className="-rotate-[225deg]"
-        >
+    <div className="relative" style={{ width: S, height: S }}>
+      <svg width={S} height={S}>
+        {/* tick ring */}
+        {Array.from({ length: N_TICKS }).map((_, i) => {
+          const deg = 135 + i * (270 / (N_TICKS - 1));
+          const major = i % 9 === 0;
+          const [x1, y1] = polar(nr + 7, deg);
+          const [x2, y2] = polar(nr + (major ? 15 : 12), deg);
+          const active = deg <= activeAngle + 0.5;
+          return (
+            <line
+              key={i}
+              x1={x1}
+              y1={y1}
+              x2={x2}
+              y2={y2}
+              stroke={active ? color : "#2b3644"}
+              strokeWidth={major ? 2 : 1.2}
+              strokeLinecap="round"
+              opacity={active ? 0.9 : 0.7}
+            />
+          );
+        })}
+        {/* track + value arc, rotated so the 270° arc starts at 135° */}
+        <g transform={`rotate(135 ${c} ${c})`}>
           <circle
-            stroke="#232b36"
+            cx={c}
+            cy={c}
+            r={nr}
             fill="transparent"
-            strokeWidth={stroke}
-            strokeDasharray={`${arcLength} ${circumference}`}
+            stroke="#161e29"
+            strokeWidth={STROKE}
+            strokeDasharray={`${arcLen} ${C}`}
             strokeLinecap="round"
-            r={normalizedRadius}
-            cx={radius}
-            cy={radius}
           />
           <circle
-            stroke={color}
+            cx={c}
+            cy={c}
+            r={nr}
             fill="transparent"
-            strokeWidth={stroke}
-            strokeDasharray={`${arcLength} ${circumference}`}
+            stroke={color}
+            strokeWidth={STROKE}
+            strokeDasharray={`${arcLen} ${C}`}
             strokeDashoffset={dashOffset}
             strokeLinecap="round"
-            r={normalizedRadius}
-            cx={radius}
-            cy={radius}
-            style={{ transition: "stroke-dashoffset 0.6s ease, stroke 0.6s ease" }}
+            style={{
+              transition: "stroke-dashoffset 0.8s cubic-bezier(0.22,1,0.36,1), stroke 0.5s ease",
+              filter: `drop-shadow(0 0 7px ${color}66)`,
+            }}
           />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span
-            className="font-mono text-4xl font-semibold tabular-nums"
-            style={{ color }}
-          >
-            {(pct * 100).toFixed(1)}
-          </span>
-          <span className="text-xs tracking-widest text-muted">% SOC</span>
-        </div>
-      </div>
-      <div className="mt-3 flex items-center gap-2 font-mono text-xs text-muted">
-        <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-        confidence {(confidence * 100).toFixed(1)}%
-      </div>
+        </g>
+      </svg>
     </div>
   );
 }

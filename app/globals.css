@@ -4,19 +4,66 @@
 
 html,
 body {
-  background-color: #0b0f14;
-  color: #e6ebf1;
+  background-color: #06090d;
+  color: #e9eff5;
 }
 
 * {
   box-sizing: border-box;
 }
 
+/* Ambient lab texture: soft glows only (no grid overlay) */
+.bg-texture {
+  background-image:
+    radial-gradient(720px 340px at 12% -8%, rgba(163, 230, 53, 0.07), transparent 62%),
+    radial-gradient(900px 480px at 95% 112%, rgba(56, 189, 248, 0.055), transparent 60%);
+  mask-image: radial-gradient(ellipse 120% 90% at 50% 20%, black 55%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 120% 90% at 50% 20%, black 55%, transparent 100%);
+}
+
+::selection {
+  background: rgba(163, 230, 53, 0.28);
+  color: #f4f8ec;
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #232b36;
+  background: #1d2733;
+  border-radius: 6px;
+  border: 2px solid #06090d;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2a3644;
+}
+
+:focus-visible {
+  outline: 2px solid rgba(163, 230, 53, 0.6);
+  outline-offset: 2px;
   border-radius: 4px;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
